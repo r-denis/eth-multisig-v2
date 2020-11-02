@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity >=0.5 <0.8.0;
+pragma solidity >=0.7;
 import "../Forwarder.sol";
 import "../ERC20Interface.sol";
 /**
@@ -57,7 +57,7 @@ contract CeloWalletSimple {
    *
    * @param allowedSigners An array of signers on the wallet
    */
-  constructor(address[] memory allowedSigners) public {
+  constructor(address[] memory allowedSigners) {
     if (allowedSigners.length != 3) {
       // Invalid number of signers
       revert();
@@ -90,10 +90,17 @@ contract CeloWalletSimple {
     _;
   }
 
+  receive () external payable {
+    if (msg.value > 0) {
+      // Fire deposited event if we are receiving funds
+      emit Deposited(msg.sender, msg.value, msg.data);
+    }
+  }
+
   /**
    * Gets called when a transaction is received without calling a method
    */
-  function() external payable {
+  fallback() external payable {
     if (msg.value > 0) {
       // Fire deposited event if we are receiving funds
       emit Deposited(msg.sender, msg.value, msg.data);
@@ -139,14 +146,14 @@ contract CeloWalletSimple {
       revert();
     }
     */
-    (bool success,) = toAddress.call.value(value)(data);
+    // (bool success,) = toAddress.call.value(value)(data);
+    (bool success,) = toAddress.call{value:value}(data);
     // OR
     // (bool success, bytes memory dataReturn) = toAddress.call.value(value)(data);
     require(success);
-    // OR
-    // if ( !success ) {
+    //if ( !success ) {
     //  revert();
-    // }
+    //}
 
     emit Transacted(msg.sender, otherSigner, operationHash, toAddress, value, data);
   }
